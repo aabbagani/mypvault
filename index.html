@@ -327,7 +327,7 @@ figure.diagram figcaption { font-size: 12px; color: var(--muted); margin-top: 4p
     </section>
     <section class="view" id="v-library" aria-label="Library" hidden>
       <div class="lib"><div class="lib-inner">
-        <div class="lib-head"><div><h2>Library</h2><p>Sample papers and mark schemes, written for this demo (not IB material). Each marking point is stored as its own chunk.</p></div>
+        <div class="lib-head"><div><h2>Library</h2><p>Sample papers and mark schemes, written for this demo (not IB material). Open one to see its marking points.</p></div>
           <button class="btn primary" type="button" id="uploadBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Upload mark scheme</button></div>
         <div class="table" id="libTable"></div>
         <p class="libnote" id="libNote"></p>
@@ -371,7 +371,7 @@ figure.diagram figcaption { font-size: 12px; color: var(--muted); margin-top: 4p
   <div class="box2">
     <button class="x" type="button" data-close="upload" aria-label="Close">×</button>
     <h2 id="uploadTitle">Upload a mark scheme</h2>
-    <p style="color:var(--muted)">The question becomes one chunk and each marking point becomes its own chunk. It stays in this browser only.</p>
+    <p style="color:var(--muted)">Answers to this question will be marked against these points. It stays in this browser only.</p>
     <label class="btn primary filebtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 17v3h16v-3"/></svg>Load a .txt file<input type="file" id="txtIn" accept=".txt,text/plain"></label>
     <p class="fmt">Format: a line starting <b>Question:</b>, then one marking point per line.</p>
     <div id="txtPreview"></div>
@@ -1218,7 +1218,7 @@ function improvement(o, idx) {
   if (!earlier.length) return '';
   const best = Math.max(...earlier.map((x) => x.result.score / x.result.max));
   const now = o.result.score / o.result.max;
-  return now > best ? '<div class="note win" data-win>↑ Score improved on this question type: ' + Math.round(best * o.result.max) + '/' + o.result.max + ' → ' + o.result.score + '/' + o.result.max + '. That\'s the north-star metric, Answer Score Improvement.</div>' : '';
+  return now > best ? '<div class="note win" data-win>↑ Up from ' + Math.round(best * o.result.max) + '/' + o.result.max + ' to ' + o.result.score + '/' + o.result.max + ' on this kind of question. You picked up ' + (o.result.score - Math.round(best * o.result.max) === 1 ? 'the mark you were missing' : 'the marks you were missing') + '.</div>' : '';
 }
 function renderThread() {
   const th = $('#thread');
@@ -1284,11 +1284,11 @@ function renderLibrary() {
     const qs = Object.values(QUESTIONS).filter((Q) => Q.paper === p.id);
     const isOpen = open.has(p.id); const mine = p.id.startsWith('up');
     h += '<div class="tr" data-paper="' + p.id + '"><button type="button" class="nm" data-toggle="' + p.id + '" aria-expanded="' + isOpen + '">' + IC.chevR + esc(mine ? p.qs[0].stem.replace(/\.$/, '') : p.subject + ': ' + p.name) + '</button><span class="c2"><span class="subj">' + esc(p.subject) + '</span></span><span class="c3">' + qs.length + '</span><span class="c4">' + qs.reduce((s, Q) => s + Q.points.length, 0) + '</span><span class="c5"><span class="status"><i></i>Indexed</span></span><span>' + (mine ? '<button type="button" class="rm" data-rm="' + p.id + '">Remove</button>' : '') + '</span></div>' +
-      '<div class="qs" ' + (isOpen ? '' : 'hidden') + '>' + qs.map((Q) => '<div class="qitem"><b>Q' + Q.n + '. ' + esc(qText(Q)) + '</b><ol>' + Q.points.map((pt) => '<li>' + esc(pt.text) + ' <span class="mk">1 chunk</span></li>').join('') + '</ol></div>').join('') + '</div>';
+      '<div class="qs" ' + (isOpen ? '' : 'hidden') + '>' + qs.map((Q) => '<div class="qitem"><b>Q' + Q.n + '. ' + esc(qText(Q)) + '</b><ol>' + Q.points.map((pt) => '<li>' + esc(pt.text) + ' <span class="mk">[1 mark]</span></li>').join('') + '</ol></div>').join('') + '</div>';
   });
   $('#libTable').innerHTML = h;
   const n = Object.keys(QUESTIONS).length, ms = CHUNKS.filter((c) => c.type === 'ms').length, sy = CHUNKS.filter((c) => c.type === 'syl').length;
-  $('#libNote').textContent = n + ' questions · ' + ms + ' marking-point chunks · ' + sy + ' syllabus chunks indexed.';
+  $('#libNote').textContent = n + ' questions · ' + ms + ' marking points · ' + sy + ' syllabus topics.';
 }
 const SUBJECTS = ['Biology', 'Chemistry', 'Physics', 'Mathematics', 'Individuals and societies'];
 const SAMPLE_UPLOADS = [
@@ -1303,7 +1303,7 @@ function addUpload(u) {
   const pts = u.pts.slice(0, 12);
   state.uploads.push({ id, subject: u.subject, name: 'Your upload', qs: [{ topic, cmd, marks: pts.length, stem, ms: pts.map((t) => [t, t.length > 48 ? t.slice(0, 46) + '…' : t, '', 'Add: ' + t]) }] });
   save(); buildChunks(state.uploads); open.add(id); renderLibrary(); renderUploadList();
-  $('#upload').hidden = true; toast('Indexed: 1 question + ' + pts.length + ' marking-point chunks');
+  $('#upload').hidden = true; toast('Added: 1 question with ' + pts.length + ' marking points');
   return id;
 }
 function renderUploadList() {
@@ -1316,7 +1316,7 @@ function renderTxtPreview() {
   if (pendingTxt.err) { box.innerHTML = '<div class="preview"><span class="err">' + esc(pendingTxt.err) + '</span></div>'; return; }
   box.innerHTML = '<div class="preview"><b>' + esc(pendingTxt.name) + '</b><label>Question<input id="txtQ" value="' + esc(pendingTxt.stem) + '" placeholder="e.g. Describe the role of bile."></label>' +
     '<label>Subject<select id="txtSubj">' + SUBJECTS.map((s) => '<option>' + esc(s) + '</option>').join('') + '</select></label>' +
-    '<span>' + pendingTxt.pts.length + ' marking point' + (pendingTxt.pts.length === 1 ? '' : 's') + ', one chunk each:</span><ol>' + pendingTxt.pts.map((p) => '<li>' + esc(p) + '</li>').join('') + '</ol>' +
+    '<span>' + pendingTxt.pts.length + ' marking point' + (pendingTxt.pts.length === 1 ? '' : 's') + ' found:</span><ol>' + pendingTxt.pts.map((p) => '<li>' + esc(p) + '</li>').join('') + '</ol>' +
     '<button type="button" class="btn primary" id="txtAdd">Add to Library</button></div>';
 }
 function parseScheme(text) {
